@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FM Ops — Facilities Management Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+:root{
+  --bg:#0b1120; --bg2:#0f172a; --panel:rgba(255,255,255,.05); --panel2:rgba(255,255,255,.08);
+  --stroke:rgba(255,255,255,.10); --txt:#e5edf7; --muted:#93a4bd; --brand:#6366f1; --brand2:#8b5cf6;
+  --ok:#10b981; --warn:#f59e0b; --bad:#ef4444; --info:#38bdf8; --shadow:0 10px 40px rgba(0,0,0,.45);
+}
+[data-theme="light"]{
+  --bg:#eef2f9; --bg2:#f7f9fd; --panel:rgba(255,255,255,.75); --panel2:#ffffff;
+  --stroke:rgba(15,23,42,.10); --txt:#0f172a; --muted:#5b6b85; --shadow:0 10px 30px rgba(15,23,42,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;color:var(--txt);
+  background:radial-gradient(1200px 600px at 80% -10%,rgba(99,102,241,.25),transparent),
+             radial-gradient(1000px 500px at -10% 20%,rgba(139,92,246,.18),transparent),var(--bg);
+  min-height:100vh;overflow-x:hidden}
+.app{display:flex;min-height:100vh}
+/* Sidebar */
+.side{width:248px;flex:none;padding:18px 14px;background:var(--panel);backdrop-filter:blur(20px);
+  border-right:1px solid var(--stroke);position:sticky;top:0;height:100vh;overflow-y:auto;transition:.25s}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--brand),var(--brand2));
+  display:grid;place-items:center;font-weight:800;color:#fff;box-shadow:0 6px 20px rgba(99,102,241,.5)}
+.brand b{font-size:16px;letter-spacing:.3px}.brand span{font-size:11px;color:var(--muted)}
+.nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;color:var(--muted);
+  text-decoration:none;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:3px;transition:.15s}
+.nav a:hover{background:var(--panel2);color:var(--txt)}
+.nav a.active{background:linear-gradient(135deg,rgba(99,102,241,.28),rgba(139,92,246,.18));color:var(--txt);
+  box-shadow:inset 0 0 0 1px var(--stroke)}
+.nav a .ic{width:20px;text-align:center}
+.nav .badge{margin-left:auto;background:var(--bad);color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:700}
+.navlabel{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:14px 12px 6px;opacity:.7}
+/* Main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:14px 22px;
+  background:var(--panel);backdrop-filter:blur(20px);border-bottom:1px solid var(--stroke)}
+.top h1{font-size:19px;font-weight:700}.top .sub{font-size:12px;color:var(--muted)}
+.search{flex:1;max-width:420px;position:relative}
+.search input{width:100%;padding:9px 14px 9px 36px;border-radius:11px;border:1px solid var(--stroke);
+  background:var(--panel2);color:var(--txt);font-size:13px;outline:none}
+.search .si{position:absolute;left:12px;top:9px;color:var(--muted)}
+.iconbtn{width:40px;height:40px;border-radius:11px;border:1px solid var(--stroke);background:var(--panel2);
+  color:var(--txt);cursor:pointer;font-size:16px;display:grid;place-items:center;position:relative;transition:.15s}
+.iconbtn:hover{background:var(--panel)}
+.iconbtn .dot{position:absolute;top:7px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid var(--bg2)}
+.content{padding:22px;flex:1}
+.hide{display:none!important}
+/* Cards */
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.card{background:var(--panel);border:1px solid var(--stroke);border-radius:18px;padding:18px;
+  backdrop-filter:blur(16px);box-shadow:var(--shadow)}
+.kpi{position:relative;overflow:hidden;transition:.2s;cursor:pointer}
+.kpi:hover{transform:translateY(-4px);box-shadow:0 16px 44px rgba(99,102,241,.28)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--ac,var(--brand)),transparent)}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px;
+  background:linear-gradient(120deg,rgba(99,102,241,.32),rgba(139,92,246,.14) 55%,transparent)}
+.hero h2{font-size:23px;font-weight:800;letter-spacing:.2px}
+.hero p{font-size:12.5px;color:var(--muted);margin-top:4px}
+.ring{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;text-align:center;
+  background:conic-gradient(var(--ok) calc(var(--p)*1%),var(--panel2) 0);position:relative;flex:none}
+.ring::before{content:'';position:absolute;inset:8px;border-radius:50%;background:var(--bg2)}
+.ring div{position:relative}
+.ring b{font-size:19px;display:block}
+.ring small{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.eq{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;transition:.18s}
+.eq:hover{transform:translateY(-3px);border-color:var(--brand)}
+.eq .e-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:var(--panel2);flex:none}
+.eq b{font-size:20px;font-weight:800;line-height:1.1;display:block}
+.eq .e-l{font-size:11.5px;color:var(--muted);font-weight:600}
+.eq small{font-size:10px;color:var(--ok)}
+.kpi .k-ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:20px;margin-bottom:12px}
+.kpi .k-val{font-size:30px;font-weight:800;line-height:1}
+.kpi .k-lbl{font-size:12.5px;color:var(--muted);margin-top:6px;font-weight:500}
+.kpi .k-trend{font-size:11px;margin-top:8px;font-weight:600}
+.charts{grid-template-columns:repeat(2,1fr)}
+.chart-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.chart-h b{font-size:14.5px}.chart-h span{font-size:11px;color:var(--muted)}
+.chart-box{position:relative;height:240px}
+/* Toolbar / table */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.toolbar .grow{flex:1;min-width:120px}
+select,input[type=text],input[type=date],input[type=number],input[type=email],textarea{
+  padding:9px 12px;border-radius:10px;border:1px solid var(--stroke);background:var(--panel2);
+  color:var(--txt);font-size:13px;outline:none;font-family:inherit}
+select:focus,input:focus,textarea:focus{border-color:var(--brand)}
+.btn{padding:9px 16px;border-radius:11px;border:1px solid var(--stroke);background:var(--panel2);color:var(--txt);
+  font-size:13px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--panel)}
+.btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand2));border:none;color:#fff;
+  box-shadow:0 6px 18px rgba(99,102,241,.4)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.danger{color:var(--bad)}
+.tablewrap{overflow-x:auto;border-radius:14px;border:1px solid var(--stroke)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+th{text-align:left;padding:12px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--muted);background:var(--panel2);position:sticky;top:0}
+td{padding:11px 14px;border-top:1px solid var(--stroke)}
+tr:hover td{background:var(--panel2)}
+.pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;white-space:nowrap}
+.p-ok{background:rgba(16,185,129,.18);color:#34d399}
+.p-warn{background:rgba(245,158,11,.18);color:#fbbf24}
+.p-bad{background:rgba(239,68,68,.18);color:#f87171}
+.p-info{background:rgba(56,189,248,.18);color:#7dd3fc}
+.p-mut{background:var(--panel2);color:var(--muted)}
+.rowbtns{display:flex;gap:6px}
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty .e-ic{font-size:40px;opacity:.4;margin-bottom:10px}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(3,7,18,.65);backdrop-filter:blur(4px);z-index:100;
+  display:grid;place-items:center;padding:20px}
+.modal{background:var(--bg2);border:1px solid var(--stroke);border-radius:20px;width:100%;max-width:720px;
+  max-height:88vh;overflow-y:auto;box-shadow:var(--shadow)}
+.modal-h{display:flex;justify-content:space-between;align-items:center;padding:20px 22px;
+  border-bottom:1px solid var(--stroke);position:sticky;top:0;background:var(--bg2);z-index:2}
+.modal-h b{font-size:16px}
+.modal-body{padding:22px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:12px;color:var(--muted);font-weight:600}
+.field input,.field select,.field textarea{width:100%}
+.modal-f{padding:16px 22px;border-top:1px solid var(--stroke);display:flex;justify-content:flex-end;gap:10px;
+  position:sticky;bottom:0;background:var(--bg2)}
+/* Notifications drawer */
+.drawer{position:fixed;top:0;right:0;height:100vh;width:380px;max-width:90vw;background:var(--bg2);
+  border-left:1px solid var(--stroke);z-index:90;transform:translateX(100%);transition:.28s;
+  box-shadow:var(--shadow);display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-h{padding:18px 20px;border-bottom:1px solid var(--stroke);display:flex;justify-content:space-between;align-items:center}
+.drawer-body{overflow-y:auto;padding:12px;flex:1}
+.note{display:flex;gap:12px;padding:12px;border-radius:12px;border:1px solid var(--stroke);margin-bottom:9px;background:var(--panel)}
+.note .n-ic{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:15px}
+.note b{font-size:13px}.note p{font-size:12px;color:var(--muted);margin-top:2px}
+.note small{font-size:10.5px;color:var(--muted)}
+/* Calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .dow{text-align:center;font-size:11px;color:var(--muted);font-weight:700;padding:6px}
+.cal .day{min-height:82px;border:1px solid var(--stroke);border-radius:10px;padding:6px;background:var(--panel2);font-size:11px}
+.cal .day .dn{font-weight:700;color:var(--muted)}
+.cal .day.today{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+.cal .ev{margin-top:3px;padding:2px 5px;border-radius:5px;font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* misc */
+.section-title{font-size:15px;font-weight:700;margin:6px 0 4px}
+.muted{color:var(--muted)}
+.flexbtwn{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);z-index:200;
+  background:var(--bg2);border:1px solid var(--stroke);padding:12px 20px;border-radius:12px;box-shadow:var(--shadow);
+  font-size:13px;font-weight:600;transition:.3s;display:flex;align-items:center;gap:9px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.hamb{display:none}
+@media(max-width:900px){
+  .charts{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}
+  .side{position:fixed;z-index:80;left:0;transform:translateX(-100%)}
+  .side.open{transform:translateX(0)}
+  .hamb{display:grid}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
+    <div class="brand">
+      <div class="logo">FM</div>
+      <div><b>FM Ops</b><br><span>CAFM Platform</span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="top">
+      <button class="iconbtn hamb" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+      <div>
+        <h1 id="pageTitle">Executive Dashboard</h1>
+        <div class="sub" id="pageSub">Real-time facilities overview</div>
+      </div>
+      <div class="search">
+        <span class="si">🔍</span>
+        <input id="globalSearch" placeholder="Search assets, PPM, contractors, incidents…" oninput="globalSearch(this.value)">
+      </div>
+      <button class="iconbtn" onclick="toggleTheme()" title="Theme">🌓</button>
+      <button class="iconbtn" onclick="openNotes()" title="Notifications"><span id="bell">🔔</span><span class="dot hide" id="notedot"></span></button>
+    </header>
+    <div class="content" id="view"></div>
+  </div>
+</div>
+
+<!-- Notifications drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-h"><b>🔔 Notifications</b><button class="iconbtn" onclick="closeNotes()">✕</button></div>
+  <div class="drawer-body" id="noteList"></div>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================= DATA LAYER ============================= */
+const DB_KEY='fmops_db_v2';
+const todayISO=()=>new Date().toISOString().slice(0,10);
+function daysBetween(d){ if(!d) return null; const t=new Date(todayISO()); const x=new Date(d); return Math.round((x-t)/86400000); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+const SEED={
+ ppm:[
+  {id:uid(),ppmNo:'PPM-1001',asset:'AHU-01',assetId:'AST-101',building:'Tower A',floor:'Roof',location:'Plant Room',client:'Emaar',frequency:'Monthly',contractor:'CoolTech LLC',engineer:'R. Kumar',technician:'A. Sayed',priority:'High',plannedDate:offset(-2),dueDate:offset(-2),completionDate:'',status:'Overdue',remarks:'Filter change pending'},
+  {id:uid(),ppmNo:'PPM-1002',asset:'Chiller-02',assetId:'AST-102',building:'Tower A',floor:'B1',location:'Chiller Yard',client:'Emaar',frequency:'Quarterly',contractor:'CoolTech LLC',engineer:'R. Kumar',technician:'M. Ali',priority:'Critical',plannedDate:offset(5),dueDate:offset(5),completionDate:'',status:'Upcoming',remarks:''},
+  {id:uid(),ppmNo:'PPM-1003',asset:'FirePump-01',assetId:'AST-201',building:'Tower B',floor:'B2',location:'Pump Room',client:'DAMAC',frequency:'Half-Yearly',contractor:'SafeGuard FS',engineer:'S. Nair',technician:'J. Roy',priority:'Critical',plannedDate:offset(-15),dueDate:offset(-15),completionDate:offset(-14),status:'Completed',remarks:'Passed test'},
+  {id:uid(),ppmNo:'PPM-1004',asset:'Genset-01',assetId:'AST-301',building:'Mall',floor:'B1',location:'Generator Room',client:'Nakheel',frequency:'Monthly',contractor:'PowerGrid Co',engineer:'T. Wong',technician:'K. Das',priority:'Medium',plannedDate:offset(20),dueDate:offset(20),completionDate:'',status:'Upcoming',remarks:''},
+  {id:uid(),ppmNo:'PPM-1005',asset:'Elevator-03',assetId:'AST-401',building:'Tower B',floor:'All',location:'Core',client:'DAMAC',frequency:'Monthly',contractor:'LiftCare',engineer:'S. Nair',technician:'P. Menon',priority:'High',plannedDate:offset(-1),dueDate:offset(-1),completionDate:'',status:'Overdue',remarks:''}
+ ],
+ contractors:[
+  {id:uid(),company:'CoolTech LLC',trade:'HVAC',contact:'Rakesh Kumar',email:'ops@cooltech.ae',whatsapp:'971501112233',phone:'+97142223344',contractNo:'CT-2024-01',contractValue:'450000',startDate:offset(-300),endDate:offset(65),insuranceExpiry:offset(40),tradeLicenseExpiry:offset(120),civilDefenseExpiry:offset(15)},
+  {id:uid(),company:'SafeGuard FS',trade:'Fire & Safety',contact:'Sam Nair',email:'contact@safeguard.ae',whatsapp:'971502223344',phone:'+97143334455',contractNo:'SG-2024-07',contractValue:'320000',startDate:offset(-200),endDate:offset(180),insuranceExpiry:offset(9),tradeLicenseExpiry:offset(200),civilDefenseExpiry:offset(90)},
+  {id:uid(),company:'PowerGrid Co',trade:'Electrical',contact:'Tom Wong',email:'info@powergrid.ae',whatsapp:'971503334455',phone:'+97144445566',contractNo:'PG-2023-11',contractValue:'610000',startDate:offset(-420),endDate:offset(-5),insuranceExpiry:offset(300),tradeLicenseExpiry:offset(75),civilDefenseExpiry:offset(150)},
+  {id:uid(),company:'LiftCare',trade:'Elevators',contact:'Priya Menon',email:'service@liftcare.ae',whatsapp:'971504445566',phone:'+97145556677',contractNo:'LC-2024-03',contractValue:'280000',startDate:offset(-150),endDate:offset(210),insuranceExpiry:offset(55),tradeLicenseExpiry:offset(25),civilDefenseExpiry:offset(300)}
+ ],
+ incidents:[
+  {id:uid(),incidentNo:'INC-501',type:'Near Miss',date:offset(-6),location:'Loading Bay',building:'Mall',department:'Logistics',reportedBy:'A. Sayed',contractor:'PowerGrid Co',description:'Pallet nearly fell from height',rootCause:'Improper stacking',correctiveAction:'Re-stack and barrier',responsible:'K. Das',dueDate:offset(4),severity:'Medium',status:'Open'},
+  {id:uid(),incidentNo:'INC-502',type:'First Aid Case',date:offset(-12),location:'Plant Room',building:'Tower A',department:'MEP',reportedBy:'M. Ali',contractor:'CoolTech LLC',description:'Minor hand cut during filter change',rootCause:'No cut-resistant gloves',correctiveAction:'Issue PPE, toolbox talk',responsible:'R. Kumar',dueDate:offset(-2),severity:'Low',status:'Overdue'},
+  {id:uid(),incidentNo:'INC-503',type:'Unsafe Condition',date:offset(-3),location:'Stairwell B',building:'Tower B',department:'FM',reportedBy:'S. Nair',contractor:'SafeGuard FS',description:'Emergency light not working',rootCause:'Battery failure',correctiveAction:'Replace battery pack',responsible:'J. Roy',dueDate:offset(7),severity:'Medium',status:'Open'},
+  {id:uid(),incidentNo:'INC-504',type:'Property Damage',date:offset(-25),location:'Basement',building:'Mall',department:'Civil',reportedBy:'K. Das',contractor:'PowerGrid Co',description:'Water leak damaged panel',rootCause:'Failed seal',correctiveAction:'Reseal & repaint',responsible:'T. Wong',dueDate:offset(-10),severity:'High',status:'Closed'}
+ ],
+ capa:[
+  {id:uid(),action:'Issue cut-resistant gloves to all MEP techs',type:'Corrective',owner:'R. Kumar',dueDate:offset(3),priority:'High',status:'Open'},
+  {id:uid(),action:'Monthly emergency-light inspection program',type:'Preventive',owner:'S. Nair',dueDate:offset(14),priority:'Medium',status:'Open'},
+  {id:uid(),action:'Revise stacking SOP for loading bay',type:'Corrective',owner:'K. Das',dueDate:offset(-4),priority:'High',status:'Overdue'},
+  {id:uid(),action:'Quarterly seal integrity checks in basement',type:'Preventive',owner:'T. Wong',dueDate:offset(-20),priority:'Medium',status:'Closed'}
+ ],
+ documents:[
+  {id:uid(),name:'CoolTech Trade License',type:'Trade License',owner:'CoolTech LLC',issueDate:offset(-245),expiryDate:offset(120)},
+  {id:uid(),name:'SafeGuard Insurance',type:'Insurance',owner:'SafeGuard FS',issueDate:offset(-356),expiryDate:offset(9)},
+  {id:uid(),name:'Civil Defense Cert - Tower A',type:'Civil Defense',owner:'Tower A',issueDate:offset(-350),expiryDate:offset(15)},
+  {id:uid(),name:'Chiller-02 Calibration',type:'Calibration',owner:'AST-102',issueDate:offset(-160),expiryDate:offset(-5)},
+  {id:uid(),name:'ISO 9001 Certificate',type:'ISO',owner:'Company',issueDate:offset(-500),expiryDate:offset(230)},
+  {id:uid(),name:'Emirates ID - R. Kumar',type:'Emirates ID',owner:'R. Kumar',issueDate:offset(-700),expiryDate:offset(45)}
+ ],
+ assets:[
+  {id:uid(),name:'Air Handling Unit 01',assetId:'AST-101',category:'HVAC',building:'Tower A',floor:'Roof',location:'Plant Room',manufacturer:'Carrier',model:'39G',serial:'CR39G-0091',purchaseDate:offset(-1200),warrantyExpiry:offset(160),contractor:'CoolTech LLC',status:'Operational'},
+  {id:uid(),name:'Water-Cooled Chiller 02',assetId:'AST-102',category:'Chiller',building:'Tower A',floor:'B1',location:'Chiller Yard',manufacturer:'York',model:'YK-1200',serial:'YK-22-4410',purchaseDate:offset(-1500),warrantyExpiry:offset(-30),contractor:'CoolTech LLC',status:'Operational'},
+  {id:uid(),name:'Fire Pump 01',assetId:'AST-201',category:'Fire Fighting',building:'Tower B',floor:'B2',location:'Pump Room',manufacturer:'Grundfos',model:'NKF-200',serial:'GF-19-7781',purchaseDate:offset(-900),warrantyExpiry:offset(400),contractor:'SafeGuard FS',status:'Operational'},
+  {id:uid(),name:'Diesel Generator 01',assetId:'AST-301',category:'Generator',building:'Mall',floor:'B1',location:'Generator Room',manufacturer:'Cummins',model:'C1100',serial:'CU-20-3320',purchaseDate:offset(-1100),warrantyExpiry:offset(70),contractor:'PowerGrid Co',status:'Standby'},
+  {id:uid(),name:'Passenger Elevator 03',assetId:'AST-401',category:'Elevator',building:'Tower B',floor:'All',location:'Core',manufacturer:'Otis',model:'Gen2',serial:'OT-21-9902',purchaseDate:offset(-1000),warrantyExpiry:offset(20),contractor:'LiftCare',status:'Operational'},
+  {id:uid(),name:'CCTV System — Main Lobby',assetId:'AST-501',category:'CCTV',building:'Mall',floor:'GF',location:'Main Lobby',manufacturer:'Hikvision',model:'DS-2CD',serial:'HK-23-1120',purchaseDate:offset(-600),warrantyExpiry:offset(130),contractor:'SafeGuard FS',status:'Operational'},
+  {id:uid(),name:'Gate Barrier — Car Park Entry 1',assetId:'AST-601',category:'Gate Barrier',building:'Mall',floor:'GF',location:'Car Park Entrance',manufacturer:'FAAC',model:'B680H',serial:'FA-22-0031',purchaseDate:offset(-800),warrantyExpiry:offset(45),contractor:'PowerGrid Co',status:'Operational'},
+  {id:uid(),name:'Sliding Door — Main Entrance',assetId:'AST-701',category:'Sliding Door',building:'Tower A',floor:'GF',location:'Main Entrance',manufacturer:'Dormakaba',model:'ES200',serial:'DK-21-8890',purchaseDate:offset(-950),warrantyExpiry:offset(-10),contractor:'LiftCare',status:'Under Maintenance'}
+ ],
+ tasks:[
+  {id:uid(),title:'Replace AHU-01 filters',assignee:'A. Sayed',priority:'High',dueDate:offset(1),progress:'40',status:'In Progress'},
+  {id:uid(),title:'Close INC-502 corrective action',assignee:'R. Kumar',priority:'High',dueDate:offset(-2),progress:'70',status:'In Progress'},
+  {id:uid(),title:'Prepare monthly QSHE report',assignee:'S. Nair',priority:'Medium',dueDate:offset(6),progress:'10',status:'To Do'},
+  {id:uid(),title:'Renew SafeGuard insurance',assignee:'FM Admin',priority:'Critical',dueDate:offset(9),progress:'0',status:'To Do'},
+  {id:uid(),title:'Genset load test sign-off',assignee:'T. Wong',priority:'Low',dueDate:offset(-8),progress:'100',status:'Done'}
+ ],
+ qsheReports:[
+  {id:uid(),name:'Monthly QSHE Report — June',type:'Monthly QSHE Report',date:offset(-22),preparedBy:'S. Nair',remarks:'Sample record — click Edit to attach your PDF.'},
+  {id:uid(),name:'Fire Drill — Tower A',type:'Site Inspection',date:offset(-10),preparedBy:'J. Roy',remarks:'Evacuation in 4m 20s. Two blocked exits noted.'}
+ ]
+};
+function offset(d){ const x=new Date(); x.setDate(x.getDate()+d); return x.toISOString().slice(0,10); }
+
+let DB=load();
+function guessCat(n){ n=(n||'').toLowerCase();
+ if(n.includes('chiller'))return'Chiller'; if(n.includes('elevator')||n.includes('lift'))return'Elevator';
+ if(n.includes('gen'))return'Generator'; if(n.includes('fire')||n.includes('pump'))return'Fire Fighting';
+ if(n.includes('cctv')||n.includes('camera'))return'CCTV'; if(n.includes('barrier')||n.includes('gate'))return'Gate Barrier';
+ if(n.includes('door'))return'Sliding Door'; if(n.includes('ahu')||n.includes('hvac')||n.includes('air'))return'HVAC';
+ return'Other'; }
+function migrate(d){ d.qsheReports=d.qsheReports||[]; (d.assets||[]).forEach(a=>{ if(!a.category)a.category=guessCat(a.name); }); return d; }
+function load(){
+ try{ let s=localStorage.getItem(DB_KEY); if(s)return migrate(JSON.parse(s));
+      s=localStorage.getItem('fmops_db_v1'); if(s)return migrate(JSON.parse(s)); }catch(e){}
+ return migrate(JSON.parse(JSON.stringify(SEED)));
+}
+function save(){ localStorage.setItem(DB_KEY,JSON.stringify(DB)); }
+
+/* ============================= SCHEMAS ============================= */
+const SCHEMAS={
+ ppm:{title:'PPM Management',icon:'🛠️',sub:'Preventive maintenance planner',key:'ppmNo',
+   status:r=>r.status,
+   cols:['ppmNo','asset','building','frequency','contractor','dueDate','status'],
+   fields:[
+    {k:'ppmNo',l:'PPM Number'},{k:'asset',l:'Asset'},{k:'assetId',l:'Asset ID'},
+    {k:'building',l:'Building'},{k:'floor',l:'Floor'},{k:'location',l:'Location'},{k:'client',l:'Client'},
+    {k:'frequency',l:'Frequency',o:['Monthly','Quarterly','Half-Yearly','Yearly']},
+    {k:'contractor',l:'Contractor'},{k:'engineer',l:'Assigned Engineer'},{k:'technician',l:'Technician'},
+    {k:'priority',l:'Priority',o:['Low','Medium','High','Critical']},
+    {k:'plannedDate',l:'Planned Date',t:'date'},{k:'dueDate',l:'Due Date',t:'date'},{k:'completionDate',l:'Completion Date',t:'date'},
+    {k:'status',l:'Status',o:['Upcoming','In Progress','Completed','Overdue']},
+    {k:'remarks',l:'Remarks',t:'area',full:1}
+   ]},
+ contractors:{title:'Subcontractor Management',icon:'🏗️',sub:'Subcontractor profiles & compliance',key:'company',
+   cols:['company','trade','contact','endDate','insuranceExpiry','civilDefenseExpiry'],
+   fields:[
+    {k:'company',l:'Company Name'},{k:'trade',l:'Trade'},{k:'contact',l:'Contact Person'},
+    {k:'email',l:'Email',t:'email'},{k:'whatsapp',l:'WhatsApp (e.g. 9715…)'},{k:'phone',l:'Phone'},
+    {k:'contractNo',l:'Contract Number'},{k:'contractValue',l:'Contract Value',t:'number'},
+    {k:'startDate',l:'Start Date',t:'date'},{k:'endDate',l:'Contract End',t:'date'},
+    {k:'insuranceExpiry',l:'Insurance Expiry',t:'date'},{k:'tradeLicenseExpiry',l:'Trade License Expiry',t:'date'},
+    {k:'civilDefenseExpiry',l:'Civil Defense Expiry',t:'date'}
+   ]},
+ incidents:{title:'QSHE Incident & Report',icon:'⚠️',sub:'Quality, Safety, Health & Environment',key:'incidentNo',status:r=>r.status,
+   cols:['incidentNo','type','building','severity','dueDate','status','__file'],
+   fields:[
+    {k:'incidentNo',l:'Incident Number'},
+    {k:'type',l:'Incident Type',o:['Near Miss','Unsafe Act','Unsafe Condition','Property Damage','Fire Incident','Medical Case','Environmental Incident','Vehicle Accident','Lost Time Injury','First Aid Case']},
+    {k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'building',l:'Building'},{k:'department',l:'Department'},
+    {k:'reportedBy',l:'Reported By'},{k:'contractor',l:'Contractor'},
+    {k:'description',l:'Description',t:'area',full:1},{k:'rootCause',l:'Root Cause',t:'area',full:1},
+    {k:'correctiveAction',l:'Corrective Action',t:'area',full:1},{k:'responsible',l:'Responsible Person'},
+    {k:'dueDate',l:'Due Date',t:'date'},
+    {k:'severity',l:'Severity',o:['Low','Medium','High','Critical']},
+    {k:'status',l:'Status',o:['Open','In Progress','Closed','Overdue']},
+    {k:'file',l:'Attach Report / Photo (max 2 MB)',t:'file',full:1}
+   ]},
+ qsheReports:{title:'QSHE Reports',icon:'📑',sub:'Upload & manage QSHE documents',key:'name',
+   cols:['name','type','date','preparedBy','__file'],
+   fields:[
+    {k:'name',l:'Report Title'},
+    {k:'type',l:'Report Type',o:['Monthly QSHE Report','Weekly Report','Audit Report','Site Inspection','Toolbox Talk','Training Record','Risk Assessment','Method Statement','Fire Drill Report','Other']},
+    {k:'date',l:'Report Date',t:'date'},{k:'preparedBy',l:'Prepared By'},
+    {k:'file',l:'Upload File — PDF / Word / Excel / Image (max 2 MB)',t:'file',full:1},
+    {k:'remarks',l:'Remarks',t:'area',full:1}
+   ]},
+ capa:{title:'CAPA',icon:'✅',sub:'Corrective & preventive actions',key:'action',status:r=>r.status,
+   cols:['action','type','owner','dueDate','priority','status'],
+   fields:[
+    {k:'action',l:'Action',full:1},{k:'type',l:'Type',o:['Corrective','Preventive']},
+    {k:'owner',l:'Owner'},{k:'dueDate',l:'Due Date',t:'date'},
+    {k:'priority',l:'Priority',o:['Low','Medium','High']},
+    {k:'status',l:'Status',o:['Open','In Progress','Closed','Overdue']}
+   ]},
+ documents:{title:'Document & Expiry',icon:'📄',sub:'Compliance expiry tracker',key:'name',
+   cols:['name','type','owner','expiryDate','__days'],
+   fields:[
+    {k:'name',l:'Document Name'},
+    {k:'type',l:'Type',o:['Trade License','Insurance','Civil Defense','ISO','Calibration','Warranty','Passport','Visa','Emirates ID','Driving License','Vehicle Registration','Equipment Certification']},
+    {k:'owner',l:'Owner / Holder'},{k:'issueDate',l:'Issue Date',t:'date'},{k:'expiryDate',l:'Expiry Date',t:'date'}
+   ]},
+ assets:{title:'Asset Register',icon:'📦',sub:'Complete equipment inventory',key:'name',
+   cols:['assetId','name','category','building','warrantyExpiry','status'],
+   fields:[
+    {k:'name',l:'Asset Name'},{k:'assetId',l:'Asset ID'},
+    {k:'category',l:'Equipment Type',o:['Chiller','HVAC','Elevator','Generator','Fire Fighting','CCTV','Gate Barrier','Sliding Door','Plumbing','Electrical','Other']},
+    {k:'building',l:'Building'},{k:'floor',l:'Floor'},{k:'location',l:'Location'},
+    {k:'manufacturer',l:'Manufacturer'},{k:'model',l:'Model'},{k:'serial',l:'Serial Number'},
+    {k:'purchaseDate',l:'Purchase Date',t:'date'},{k:'warrantyExpiry',l:'Warranty Expiry',t:'date'},
+    {k:'contractor',l:'AMC Contractor'},{k:'status',l:'Status',o:['Operational','Standby','Under Maintenance','Faulty','Decommissioned']}
+   ]},
+ tasks:{title:'Task Management',icon:'📋',sub:'Team work tracker',key:'title',status:r=>r.status,
+   cols:['title','assignee','priority','dueDate','progress','status'],
+   fields:[
+    {k:'title',l:'Task Title',full:1},{k:'assignee',l:'Assignee'},
+    {k:'priority',l:'Priority',o:['Low','Medium','High','Critical']},
+    {k:'dueDate',l:'Due Date',t:'date'},{k:'progress',l:'Progress %',t:'number'},
+    {k:'status',l:'Status',o:['To Do','In Progress','Done']}
+   ]}
+};
+const COL_LABELS={ppmNo:'PPM #',assetId:'Asset ID',endDate:'Contract End',insuranceExpiry:'Insurance',civilDefenseExpiry:'Civil Defense',incidentNo:'Incident #',expiryDate:'Expiry',warrantyExpiry:'Warranty',__days:'Days Left',dueDate:'Due Date',__file:'File',category:'Type'};
+
+const NAV=[
+ {id:'dashboard',label:'Dashboard',icon:'📊'},
+ {sep:'Operations'},
+ {id:'ppm',label:'PPM Management',icon:'🛠️'},
+ {id:'assets',label:'Asset Register',icon:'📦'},
+ {id:'tasks',label:'Tasks',icon:'📋'},
+ {id:'contractors',label:'Subcontractors',icon:'🏗️'},
+ {sep:'Compliance'},
+ {id:'incidents',label:'QSHE Incident & Report',icon:'⚠️'},
+ {id:'qsheReports',label:'QSHE Reports',icon:'📑'},
+ {id:'capa',label:'CAPA',icon:'✅'},
+ {id:'documents',label:'Documents & Expiry',icon:'📄'},
+ {sep:'Planning'},
+ {id:'calendar',label:'Calendar',icon:'📅'},
+ {id:'reports',label:'Reports & AI',icon:'🤖'}
+];
+
+/* ============================= UTIL / UI ============================= */
+const $=(s,r=document)=>r.querySelector(s);
+let ROUTE='dashboard';
+function toast(msg){ const t=$('#toast'); t.textContent='✔ '+msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function toggleTheme(){ const h=document.documentElement; h.dataset.theme=h.dataset.theme==='dark'?'light':'dark'; if(ROUTE==='dashboard')renderDashboard(); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* status → pill class */
+function pillClass(v){
+ v=(v||'').toLowerCase();
+ if(['completed','closed','done','operational','passed'].some(x=>v.includes(x)))return'p-ok';
+ if(['overdue','faulty','critical','open','high'].some(x=>v===x||v.includes(x)))return v==='open'?'p-warn':'p-bad';
+ if(['upcoming','in progress','standby','to do','pending','medium'].some(x=>v.includes(x)))return'p-info';
+ return'p-mut';
+}
+function priClass(v){ v=(v||'').toLowerCase(); if(v==='critical'||v==='high')return'p-bad'; if(v==='medium')return'p-warn'; return'p-mut'; }
+function daysBadge(d){ const n=daysBetween(d); if(n===null)return'<span class="pill p-mut">—</span>';
+ if(n<0)return`<span class="pill p-bad">${Math.abs(n)}d overdue</span>`;
+ if(n<=15)return`<span class="pill p-warn">${n}d left</span>`;
+ if(n<=45)return`<span class="pill p-info">${n}d left</span>`;
+ return`<span class="pill p-ok">${n}d left</span>`; }
+
+/* ============================= NAV / ROUTER ============================= */
+function renderNav(){
+ const n=$('#nav'); n.innerHTML='';
+ NAV.forEach(item=>{
+  if(item.sep){ const d=document.createElement('div'); d.className='navlabel'; d.textContent=item.sep; n.appendChild(d); return; }
+  const a=document.createElement('a'); a.dataset.id=item.id; a.onclick=()=>go(item.id);
+  let badge=''; if(item.id==='dashboard'){ const c=overdueCount(); if(c)badge=`<span class="badge">${c}</span>`; }
+  a.innerHTML=`<span class="ic">${item.icon}</span>${item.label}${badge}`;
+  if(item.id===ROUTE)a.classList.add('active');
+  n.appendChild(a);
+ });
+}
+function go(id){ ROUTE=id; $('#side').classList.remove('open'); renderNav(); route(); }
+function route(){
+ const v=$('#view');
+ if(ROUTE==='dashboard'){ setTitle('Executive Dashboard','Real-time facilities overview'); renderDashboard(); }
+ else if(ROUTE==='calendar'){ setTitle('Calendar','Schedule & upcoming events'); renderCalendar(); }
+ else if(ROUTE==='reports'){ setTitle('Reports & AI Assistant','One-click reports and insights'); renderReports(); }
+ else { const s=SCHEMAS[ROUTE]; setTitle(s.title,s.sub); renderModule(ROUTE); }
+}
+function setTitle(t,s){ $('#pageTitle').textContent=t; $('#pageSub').textContent=s; }
+
+/* ============================= COMPUTED STATUS ============================= */
+// live status for PPM/incident/capa/task considering due date
+function liveStatus(mod,r){
+ const s=(r.status||'').toLowerCase();
+ if(['completed','closed','done'].some(x=>s.includes(x)))return r.status;
+ const n=daysBetween(r.dueDate);
+ if(n!==null&&n<0)return'Overdue';
+ return r.status;
+}
+function overdueCount(){
+ let c=0;
+ DB.ppm.forEach(r=>{ if(liveStatus('ppm',r)==='Overdue')c++; });
+ DB.incidents.forEach(r=>{ if(liveStatus('incidents',r)==='Overdue')c++; });
+ DB.capa.forEach(r=>{ if(liveStatus('capa',r)==='Overdue')c++; });
+ DB.tasks.forEach(r=>{ const n=daysBetween(r.dueDate); if(r.status!=='Done'&&n!==null&&n<0)c++; });
+ return c;
+}
+
+/* ============================= GENERIC MODULE (CRUD) ============================= */
+let FILTER={};
+function renderModule(mod){
+ const s=SCHEMAS[mod]; FILTER[mod]=FILTER[mod]||{q:'',status:'',building:''};
+ const buildings=[...new Set(DB[mod].map(r=>r.building).filter(Boolean))];
+ const statuses=[...new Set(DB[mod].map(r=>liveStatus(mod,r)).filter(Boolean))];
+ $('#view').innerHTML=`
+  <div class="flexbtwn">
+    <div class="toolbar" style="margin:0">
+      <input type="text" placeholder="Filter ${esc(s.title)}…" value="${esc(FILTER[mod].q)}" oninput="setF('${mod}','q',this.value)">
+      ${buildings.length?`<select onchange="setF('${mod}','building',this.value)"><option value="">All Buildings</option>${buildings.map(b=>`<option ${FILTER[mod].building===b?'selected':''}>${esc(b)}</option>`).join('')}</select>`:''}
+      ${statuses.length?`<select onchange="setF('${mod}','status',this.value)"><option value="">All Status</option>${statuses.map(b=>`<option ${FILTER[mod].status===b?'selected':''}>${esc(b)}</option>`).join('')}</select>`:''}
+    </div>
+    <div class="rowbtns">
+      <button class="btn" onclick="exportCSV('${mod}')">⤓ Export</button>
+      <button class="btn primary" onclick="openForm('${mod}')">＋ Add ${esc(s.title.split(' ')[0])}</button>
+    </div>
+  </div>
+  <div id="modTable"></div>`;
+ renderTable(mod);
+}
+function setF(mod,k,v){ FILTER[mod][k]=v; renderTable(mod); }
+function rows(mod){
+ const f=FILTER[mod]||{};
+ return DB[mod].filter(r=>{
+  if(f.building&&r.building!==f.building)return false;
+  if(f.status&&liveStatus(mod,r)!==f.status&&r.status!==f.status)return false;
+  if(f.q){ const q=f.q.toLowerCase(); if(!Object.values(r).some(v=>String(v).toLowerCase().includes(q)))return false; }
+  return true;
+ });
+}
+function renderTable(mod){
+ const s=SCHEMAS[mod]; const data=rows(mod);
+ const el=$('#modTable'); if(!el)return;
+ if(!data.length){ el.innerHTML=`<div class="card empty"><div class="e-ic">${s.icon}</div>No records match. Click “Add” to create one.</div>`; return; }
+ el.innerHTML=`<div class="tablewrap"><table><thead><tr>
+   ${s.cols.map(c=>`<th>${esc(COL_LABELS[c]||cap(c))}</th>`).join('')}<th>Actions</th></tr></thead><tbody>
+   ${data.map(r=>`<tr>${s.cols.map(c=>`<td>${cellVal(mod,c,r)}</td>`).join('')}
+   <td><div class="rowbtns">
+     <button class="btn sm" onclick="openForm('${mod}','${r.id}')">Edit</button>
+     ${(mod==='ppm'||mod==='incidents'||mod==='contractors')?`<button class="btn sm" onclick="quickSend('${mod}','${r.id}')" title="Email/WhatsApp">✉</button>`:''}
+     <button class="btn sm danger" onclick="del('${mod}','${r.id}')">Del</button>
+   </div></td></tr>`).join('')}
+ </tbody></table></div>`;
+}
+function cap(s){ return s.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase()); }
+function cellVal(mod,c,r){
+ if(c==='__days')return daysBadge(r.expiryDate);
+ if(c==='__file')return r.fileData?`<a class="btn sm" download="${esc(r.fileName||'file')}" href="${r.fileData}">⤓ ${esc((r.fileName||'file').slice(0,16))}</a>`:'<span class="pill p-mut">No file</span>';
+ let v=r[c];
+ if(['status'].includes(c)){ const ls=liveStatus(mod,r); return `<span class="pill ${pillClass(ls)}">${esc(ls)}</span>`; }
+ if(c==='priority'||c==='severity')return `<span class="pill ${priClass(v)}">${esc(v)}</span>`;
+ if(c==='progress')return `<div style="min-width:90px"><div style="background:var(--panel2);border-radius:6px;height:7px;overflow:hidden"><div style="width:${+v||0}%;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2))"></div></div><small class="muted">${+v||0}%</small></div>`;
+ if(['insuranceExpiry','civilDefenseExpiry','warrantyExpiry','endDate'].includes(c))return `${esc(v||'—')}<br>${daysBadge(v)}`;
+ return esc(v||'—');
+}
+
+/* form modal */
+function openForm(mod,id){
+ const s=SCHEMAS[mod]; const rec=id?DB[mod].find(r=>r.id===id):{};
+ const body=s.fields.map(f=>{
+  const val=esc(rec[f.k]||'');
+  let input;
+  if(f.o)input=`<select id="f_${f.k}">${['',...f.o].map(o=>`<option ${rec[f.k]===o?'selected':''} value="${esc(o)}">${o||'— select —'}</option>`).join('')}</select>`;
+  else if(f.t==='area')input=`<textarea id="f_${f.k}" rows="2">${val}</textarea>`;
+  else if(f.t==='file')input=`<input id="f_${f.k}" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,image/*">${rec.fileName?`<small class="muted">Current file: ${esc(rec.fileName)}</small>`:''}`;
+  else input=`<input id="f_${f.k}" type="${f.t||'text'}" value="${val}">`;
+  return `<div class="field ${f.full?'full':''}"><label>${esc(f.l)}</label>${input}</div>`;
+ }).join('');
+ $('#modalRoot').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal"><div class="modal-h"><b>${id?'Edit':'New'} — ${esc(s.title)}</b><button class="iconbtn" onclick="closeModal()">✕</button></div>
+   <div class="modal-body"><div class="form-grid">${body}</div></div>
+   <div class="modal-f"><button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn primary" onclick="saveForm('${mod}','${id||''}')">${id?'Save Changes':'Create'}</button></div>
+  </div></div>`;
+}
+function closeModal(){ $('#modalRoot').innerHTML=''; }
+function readFileAsData(f){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f); }); }
+async function saveForm(mod,id){
+ const s=SCHEMAS[mod]; const rec=id?DB[mod].find(r=>r.id===id):{id:uid()};
+ for(const f of s.fields){
+  const el=$('#f_'+f.k); if(!el)continue;
+  if(f.t==='file'){
+   if(el.files&&el.files[0]){
+    const file=el.files[0];
+    if(file.size>2*1024*1024){ alert('File too large — max 2 MB. Keep big files in your folder and note the filename in Remarks.'); return; }
+    rec.fileName=file.name; rec.fileData=await readFileAsData(file);
+   }
+  } else rec[f.k]=el.value;
+ }
+ if(!id)DB[mod].push(rec);
+ try{ save(); }catch(e){ alert('Browser storage is full — delete some attachments or export data first.'); return; }
+ closeModal(); toast(id?'Record updated':'Record created'); renderTable(mod); refreshChrome();
+}
+function del(mod,id){
+ if(!confirm('Delete this record? This cannot be undone.'))return;
+ DB[mod]=DB[mod].filter(r=>r.id!==id); save(); toast('Record deleted'); renderTable(mod); refreshChrome();
+}
+function refreshChrome(){ renderNav(); buildNotes(); }
+
+/* ============================= EMAIL / WHATSAPP ============================= */
+function quickSend(mod,id){
+ const r=DB[mod].find(x=>x.id===id); if(!r)return;
+ let subj='',msg='',email='',wa='';
+ if(mod==='ppm'){ subj=`PPM Reminder: ${r.ppmNo} — ${r.asset}`;
+   msg=`Dear ${r.contractor||'Contractor'},\n\nPPM ${r.ppmNo} for ${r.asset} (${r.building}, ${r.location}) is due on ${r.dueDate}.\nFrequency: ${r.frequency}. Priority: ${r.priority}.\nPlease confirm scheduling.\n\nRegards, FM Team`;
+   const c=DB.contractors.find(c=>c.company===r.contractor); email=c?.email||''; wa=c?.whatsapp||''; }
+ else if(mod==='incidents'){ subj=`Incident ${r.incidentNo} — action required`;
+   msg=`Dear ${r.responsible||'Team'},\n\nIncident ${r.incidentNo} (${r.type}) at ${r.building}, ${r.location} requires your action by ${r.dueDate}.\nCorrective action: ${r.correctiveAction}\n\nRegards, QSHE Team`; }
+ else if(mod==='contractors'){ subj=`Compliance reminder — ${r.company}`;
+   msg=`Dear ${r.contact},\n\nThis is a reminder regarding upcoming expiries:\nInsurance: ${r.insuranceExpiry}\nTrade License: ${r.tradeLicenseExpiry}\nCivil Defense: ${r.civilDefenseExpiry}\nContract End: ${r.endDate}\nPlease arrange renewals.\n\nRegards, FM Team`;
+   email=r.email; wa=r.whatsapp; }
+ showSendModal(subj,msg,email,wa);
+}
+function showSendModal(subj,msg,email,wa){
+ $('#modalRoot').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" style="max-width:560px"><div class="modal-h"><b>Send Reminder</b><button class="iconbtn" onclick="closeModal()">✕</button></div>
+   <div class="modal-body">
+     <div class="field"><label>Recipient email</label><input id="s_email" value="${esc(email)}" placeholder="name@company.com"></div>
+     <div class="field" style="margin-top:12px"><label>WhatsApp number (digits, incl. country code)</label><input id="s_wa" value="${esc(wa)}" placeholder="9715xxxxxxx"></div>
+     <div class="field" style="margin-top:12px"><label>Subject</label><input id="s_subj" value="${esc(subj)}"></div>
+     <div class="field" style="margin-top:12px"><label>Message</label><textarea id="s_msg" rows="7">${esc(msg)}</textarea></div>
+     <p class="muted" style="font-size:11px;margin-top:10px">Opens your mail app or WhatsApp with the message pre-filled — you press send.</p>
+   </div>
+   <div class="modal-f">
+     <button class="btn" onclick="doEmail()">✉ Email</button>
+     <button class="btn primary" onclick="doWhatsApp()">🟢 WhatsApp</button>
+   </div></div></div>`;
+}
+function doEmail(){ const e=$('#s_email').value,s=$('#s_subj').value,m=$('#s_msg').value;
+ window.open(`mailto:${encodeURIComponent(e)}?subject=${encodeURIComponent(s)}&body=${encodeURIComponent(m)}`); toast('Email draft opened'); }
+function doWhatsApp(){ let n=($('#s_wa').value||'').replace(/[^0-9]/g,''); const m=$('#s_msg').value;
+ if(!n){ toast('Enter a WhatsApp number'); return; }
+ window.open(`https://wa.me/${n}?text=${encodeURIComponent(m)}`,'_blank'); toast('WhatsApp opened'); }
+
+/* ============================= NOTIFICATIONS ============================= */
+function collectNotes(){
+ const N=[];
+ DB.ppm.forEach(r=>{ const n=daysBetween(r.dueDate); const s=(r.status||'').toLowerCase();
+   if(['completed'].includes(s))return;
+   if(n<0)N.push({sev:'bad',ic:'🛠️',t:`PPM ${r.ppmNo} overdue`,d:`${r.asset} — ${Math.abs(n)} days past due`,when:r.dueDate});
+   else if(n<=30)N.push({sev:n<=7?'bad':'warn',ic:'🛠️',t:`PPM ${r.ppmNo} due in ${n}d`,d:`${r.asset} • ${r.contractor}`,when:r.dueDate}); });
+ [['insuranceExpiry','Insurance'],['tradeLicenseExpiry','Trade License'],['civilDefenseExpiry','Civil Defense'],['endDate','Contract']].forEach(([k,lbl])=>{
+   DB.contractors.forEach(c=>{ const n=daysBetween(c[k]); if(n!==null&&n<=30)N.push({sev:n<0?'bad':n<=15?'warn':'info',ic:'🏗️',t:`${lbl} ${n<0?'expired':'expiring'} — ${c.company}`,d:`${n<0?Math.abs(n)+'d ago':n+'d left'} (${c[k]})`,when:c[k]}); }); });
+ DB.documents.forEach(d=>{ const n=daysBetween(d.expiryDate); if(n!==null&&n<=30)N.push({sev:n<0?'bad':n<=15?'warn':'info',ic:'📄',t:`${d.type} ${n<0?'expired':'expiring'}`,d:`${d.name} • ${n<0?Math.abs(n)+'d ago':n+'d left'}`,when:d.expiryDate}); });
+ DB.capa.forEach(r=>{ if((r.status||'').toLowerCase()==='closed')return; const n=daysBetween(r.dueDate); if(n!==null&&n<=15)N.push({sev:n<0?'bad':'warn',ic:'✅',t:`CAPA ${n<0?'overdue':'due soon'}`,d:`${r.action.slice(0,50)} • ${r.owner}`,when:r.dueDate}); });
+ DB.tasks.forEach(r=>{ if(r.status==='Done')return; const n=daysBetween(r.dueDate); if(n!==null&&n<=7)N.push({sev:n<0?'bad':'warn',ic:'📋',t:`Task ${n<0?'overdue':'due soon'}`,d:`${r.title} • ${r.assignee}`,when:r.dueDate}); });
+ return N.sort((a,b)=>new Date(a.when)-new Date(b.when));
+}
+function buildNotes(){
+ const N=collectNotes(); const list=$('#noteList');
+ $('#notedot').classList.toggle('hide',N.length===0);
+ list.innerHTML=N.length?N.map(x=>`<div class="note"><div class="n-ic ${x.sev==='bad'?'p-bad':x.sev==='warn'?'p-warn':'p-info'}">${x.ic}</div>
+   <div><b>${esc(x.t)}</b><p>${esc(x.d)}</p><small>${esc(x.when||'')}</small></div></div>`).join('')
+   :`<div class="empty"><div class="e-ic">🎉</div>All clear — no alerts.</div>`;
+}
+function openNotes(){ buildNotes(); $('#drawer').classList.add('open'); }
+function closeNotes(){ $('#drawer').classList.remove('open'); }
+
+/* ============================= DASHBOARD ============================= */
+let CHARTS=[];
+function renderDashboard(){
+ CHARTS.forEach(c=>{try{c.destroy()}catch(e){}}); CHARTS=[];
+ const ppm=DB.ppm, inc=DB.incidents;
+ const st=x=>DB.ppm.filter(r=>liveStatus('ppm',r)===x).length;
+ const comp=compliancePct();
+ const kpi=[
+  {v:DB.contractors.length,l:'Total Subcontractors',ic:'🏗️',c:'--brand',m:'contractors'},
+  {v:ppm.length,l:'Total PPM',ic:'🛠️',c:'--brand2',m:'ppm'},
+  {v:st('Completed'),l:'Completed PPM',ic:'✅',c:'--ok',m:'ppm',s:'Completed'},
+  {v:st('Upcoming')+st('In Progress'),l:'Active / Upcoming',ic:'⏳',c:'--info',m:'ppm',s:'Upcoming'},
+  {v:st('Overdue'),l:'Overdue PPM',ic:'⚠️',c:'--bad',m:'ppm',s:'Overdue'},
+  {v:inc.filter(r=>r.status!=='Closed').length,l:'Open Incidents',ic:'🚨',c:'--warn',m:'incidents',s:'Open'},
+  {v:inc.filter(r=>r.status==='Closed').length,l:'Closed Incidents',ic:'🛡️',c:'--ok',m:'incidents',s:'Closed'},
+  {v:DB.qsheReports.length,l:'QSHE Reports',ic:'📑',c:'--info',m:'qsheReports'},
+  {v:DB.capa.filter(r=>r.status!=='Closed').length,l:'Open CAPA',ic:'📌',c:'--warn',m:'capa',s:'Open'},
+  {v:DB.tasks.filter(r=>r.status!=='Done').length,l:'Active Tasks',ic:'📋',c:'--brand',m:'tasks'},
+  {v:DB.documents.filter(d=>{const n=daysBetween(d.expiryDate);return n!==null&&n<=30}).length,l:'Expiring Docs',ic:'📄',c:'--bad',m:'documents'}
+ ];
+ const EQUIP=[['Chiller','❄️'],['Elevator','🛗'],['Generator','⚡'],['Fire Fighting','🧯'],['CCTV','📹'],['Gate Barrier','🚧'],['Sliding Door','🚪'],['HVAC','🌀']];
+ const eqHtml=EQUIP.map(([cat,ic])=>{
+   const a=DB.assets.filter(x=>x.category===cat);
+   const op=a.filter(x=>x.status==='Operational').length;
+   return `<div class="card eq" onclick="eqGo('${cat}')" title="Open asset register — ${cat}">
+     <div class="e-ic">${ic}</div>
+     <div><b>${a.length}</b><span class="e-l">${cat}</span><br><small>${op} operational</small></div></div>`;
+ }).join('');
+ $('#view').innerHTML=`
+  <div class="card hero">
+    <div><h2>Facilities Command Center</h2>
+      <p>${new Date().toLocaleDateString('en',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} • ${DB.assets.length} assets • ${[...new Set(DB.assets.map(a=>a.building))].length} buildings • ${DB.contractors.length} subcontractors</p></div>
+    <div class="ring" style="--p:${comp}"><div><b>${comp}%</b><small>Compliance</small></div></div>
+  </div>
+  <div class="grid kpis" style="margin-bottom:18px">
+   ${kpi.map(k=>`<div class="card kpi" style="--ac:var(${k.c})" onclick="kpiGo('${k.m}','${k.s||''}')" title="Open ${k.l}">
+     <div class="k-ic" style="background:color-mix(in srgb,var(${k.c}) 22%,transparent);color:var(${k.c})">${k.ic}</div>
+     <div class="k-val" style="color:var(${k.c})">${k.v}</div><div class="k-lbl">${k.l}</div></div>`).join('')}
+  </div>
+  <div class="section-title">Equipment Scorecard</div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(158px,1fr));margin:10px 0 18px">${eqHtml}</div>
+  <div class="grid charts">
+   <div class="card"><div class="chart-h"><b>PPM Status Distribution</b><span>live</span></div><div class="chart-box"><canvas id="c1"></canvas></div></div>
+   <div class="card"><div class="chart-h"><b>Incident Trend (by type)</b><span>all time</span></div><div class="chart-box"><canvas id="c2"></canvas></div></div>
+   <div class="card"><div class="chart-h"><b>Subcontractor Workload (PPM)</b><span>assigned jobs</span></div><div class="chart-box"><canvas id="c3"></canvas></div></div>
+   <div class="card"><div class="chart-h"><b>Document Expiry Timeline</b><span>next 90 days</span></div><div class="chart-box"><canvas id="c4"></canvas></div></div>
+  </div>`;
+ try{ if(window.Chart) drawCharts(); else document.querySelectorAll('.chart-box').forEach(b=>b.innerHTML='<p class="muted" style="text-align:center;padding-top:90px">Charts need an internet connection to load.</p>'); }catch(e){ console.error(e); }
+ buildNotes();
+}
+function eqGo(cat){ FILTER.assets={q:cat,status:'',building:''}; go('assets'); }
+function kpiGo(mod,status){ if(!mod||!SCHEMAS[mod])return; FILTER[mod]={q:'',status:status||'',building:''}; go(mod); }
+function compliancePct(){
+ let total=0,ok=0;
+ DB.documents.forEach(d=>{ total++; if(daysBetween(d.expiryDate)>=0)ok++; });
+ DB.contractors.forEach(c=>{['insuranceExpiry','tradeLicenseExpiry','civilDefenseExpiry'].forEach(k=>{total++; if(daysBetween(c[k])>=0)ok++;});});
+ DB.ppm.forEach(r=>{ total++; if(liveStatus('ppm',r)!=='Overdue')ok++; });
+ return total?Math.round(ok/total*100):100;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function drawCharts(){
+ const grid=css('--stroke'),txt=css('--muted');
+ Chart.defaults.color=txt; Chart.defaults.borderColor=grid; Chart.defaults.font.family="'Inter','Segoe UI',sans-serif";
+ const cnt=(arr,f)=>{const m={};arr.forEach(x=>{const k=f(x)||'—';m[k]=(m[k]||0)+1});return m;};
+ // c1 PPM status doughnut
+ const ps=cnt(DB.ppm,r=>liveStatus('ppm',r));
+ CHARTS.push(new Chart($('#c1'),{type:'doughnut',data:{labels:Object.keys(ps),datasets:[{data:Object.values(ps),
+   backgroundColor:['#38bdf8','#6366f1','#10b981','#ef4444','#f59e0b'],borderWidth:0}]},
+   options:{plugins:{legend:{position:'right'}},cutout:'62%',maintainAspectRatio:false}}));
+ // c2 incidents by type bar
+ const it=cnt(DB.incidents,r=>r.type);
+ CHARTS.push(new Chart($('#c2'),{type:'bar',data:{labels:Object.keys(it),datasets:[{data:Object.values(it),
+   backgroundColor:'#8b5cf6',borderRadius:6}]},options:{plugins:{legend:{display:false}},maintainAspectRatio:false,
+   scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:grid}}}}}));
+ // c3 contractor workload
+ const cw=cnt(DB.ppm,r=>r.contractor);
+ CHARTS.push(new Chart($('#c3'),{type:'bar',data:{labels:Object.keys(cw),datasets:[{data:Object.values(cw),
+   backgroundColor:'#6366f1',borderRadius:6}]},options:{indexAxis:'y',plugins:{legend:{display:false}},maintainAspectRatio:false,
+   scales:{x:{ticks:{stepSize:1},grid:{color:grid}},y:{grid:{display:false}}}}}));
+ // c4 doc expiry timeline (buckets)
+ const buckets={'Overdue':0,'0-15d':0,'16-30d':0,'31-60d':0,'61-90d':0};
+ DB.documents.concat(DB.contractors.map(c=>({expiryDate:c.insuranceExpiry}))).forEach(d=>{
+   const n=daysBetween(d.expiryDate); if(n===null)return;
+   if(n<0)buckets['Overdue']++;else if(n<=15)buckets['0-15d']++;else if(n<=30)buckets['16-30d']++;else if(n<=60)buckets['31-60d']++;else if(n<=90)buckets['61-90d']++; });
+ CHARTS.push(new Chart($('#c4'),{type:'line',data:{labels:Object.keys(buckets),datasets:[{data:Object.values(buckets),
+   fill:true,tension:.35,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.18)',pointBackgroundColor:'#38bdf8'}]},
+   options:{plugins:{legend:{display:false}},maintainAspectRatio:false,scales:{y:{ticks:{stepSize:1},grid:{color:grid}},x:{grid:{display:false}}}}}));
+}
+
+/* ============================= CALENDAR ============================= */
+let CAL_M=new Date().getMonth(),CAL_Y=new Date().getFullYear();
+function calEvents(){
+ const E={};
+ const add=(d,txt,cls)=>{ if(!d)return; (E[d]=E[d]||[]).push({txt,cls}); };
+ DB.ppm.forEach(r=>add(r.dueDate,`🛠 ${r.ppmNo}`,'p-info'));
+ DB.incidents.forEach(r=>add(r.dueDate,`⚠ ${r.incidentNo}`,'p-warn'));
+ DB.capa.forEach(r=>add(r.dueDate,`✅ CAPA`,'p-warn'));
+ DB.tasks.forEach(r=>add(r.dueDate,`📋 ${r.title.slice(0,10)}`,'p-info'));
+ DB.documents.forEach(r=>add(r.expiryDate,`📄 ${r.type}`,'p-bad'));
+ DB.contractors.forEach(c=>add(c.insuranceExpiry,`🏗 Insurance ${c.company.slice(0,6)}`,'p-bad'));
+ return E;
+}
+function renderCalendar(){
+ const E=calEvents(); const first=new Date(CAL_Y,CAL_M,1); const start=first.getDay();
+ const days=new Date(CAL_Y,CAL_M+1,0).getDate(); const mn=first.toLocaleString('en',{month:'long'});
+ let cells='';
+ ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>cells+=`<div class="dow">${d}</div>`);
+ for(let i=0;i<start;i++)cells+=`<div class="day" style="opacity:.35"></div>`;
+ for(let d=1;d<=days;d++){
+  const iso=`${CAL_Y}-${String(CAL_M+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const isToday=iso===todayISO(); const evs=E[iso]||[];
+  cells+=`<div class="day ${isToday?'today':''}"><div class="dn">${d}</div>
+    ${evs.slice(0,3).map(e=>`<div class="ev ${e.cls}">${esc(e.txt)}</div>`).join('')}
+    ${evs.length>3?`<div class="ev p-mut">+${evs.length-3} more</div>`:''}</div>`;
+ }
+ $('#view').innerHTML=`<div class="card">
+   <div class="flexbtwn" style="margin-bottom:14px">
+     <b style="font-size:16px">${mn} ${CAL_Y}</b>
+     <div class="rowbtns"><button class="btn sm" onclick="calNav(-1)">‹ Prev</button>
+       <button class="btn sm" onclick="calToday()">Today</button>
+       <button class="btn sm" onclick="calNav(1)">Next ›</button></div>
+   </div>
+   <div class="cal">${cells}</div>
+ </div>`;
+}
+function calNav(d){ CAL_M+=d; if(CAL_M<0){CAL_M=11;CAL_Y--;} if(CAL_M>11){CAL_M=0;CAL_Y++;} renderCalendar(); }
+function calToday(){ CAL_M=new Date().getMonth(); CAL_Y=new Date().getFullYear(); renderCalendar(); }
+
+/* ============================= REPORTS / AI ============================= */
+function renderReports(){
+ $('#view').innerHTML=`
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+   <div class="card"><div class="section-title">🤖 Ask the FM Assistant</div>
+     <p class="muted" style="font-size:12px;margin-bottom:12px">Instant answers computed from your live data (offline).</p>
+     <div class="toolbar" style="margin:0"><input class="grow" id="aiQ" placeholder="e.g. show overdue PPM, expiring docs, worst contractor…" onkeydown="if(event.key==='Enter')askAI()"><button class="btn primary" onclick="askAI()">Ask</button></div>
+     <div class="rowbtns" style="flex-wrap:wrap;margin-top:10px">
+       ${['Overdue PPM','Expiring this week','Open incidents','Subcontractor summary','Executive summary'].map(q=>`<button class="btn sm" onclick="document.getElementById('aiQ').value='${q}';askAI()">${q}</button>`).join('')}
+     </div>
+     <div id="aiOut" style="margin-top:14px"></div>
+   </div>
+   <div class="card"><div class="section-title">📑 One-Click Reports</div>
+     <p class="muted" style="font-size:12px;margin-bottom:12px">Export current data to CSV (opens in Excel).</p>
+     <div class="rowbtns" style="flex-wrap:wrap">
+       ${Object.keys(SCHEMAS).map(m=>`<button class="btn sm" onclick="exportCSV('${m}')">⤓ ${SCHEMAS[m].title}</button>`).join('')}
+     </div>
+     <div class="section-title" style="margin-top:18px">Snapshot</div>
+     <div id="snap"></div>
+   </div>
+  </div>`;
+ $('#snap').innerHTML=aiExecutive();
+ askAIDefault();
+}
+function askAIDefault(){ $('#aiOut').innerHTML=`<p class="muted" style="font-size:12px">Try a question above.</p>`; }
+function askAI(){
+ const q=($('#aiQ').value||'').toLowerCase(); let out='';
+ if(/overdue/.test(q)&&/ppm/.test(q)){ const r=DB.ppm.filter(x=>liveStatus('ppm',x)==='Overdue');
+   out=aiList('Overdue PPM',r.map(x=>`${x.ppmNo} — ${x.asset} (${x.building}) • ${Math.abs(daysBetween(x.dueDate))}d late • ${x.contractor}`)); }
+ else if(/expir|week|document|doc/.test(q)){ const r=DB.documents.filter(d=>{const n=daysBetween(d.expiryDate);return n!==null&&n<=7;});
+   out=aiList('Expiring within 7 days',r.map(d=>`${d.name} (${d.type}) • ${daysBetween(d.expiryDate)}d • ${d.owner}`)); }
+ else if(/incident|open/.test(q)){ const r=DB.incidents.filter(x=>x.status!=='Closed');
+   out=aiList('Open incidents',r.map(x=>`${x.incidentNo} — ${x.type} • ${x.building} • ${x.severity} • due ${x.dueDate}`)); }
+ else if(/contractor|kpi|worst|lowest/.test(q)){ out=aiContractors(); }
+ else if(/exec|summary|report|management/.test(q)){ out=aiExecutive(); }
+ else out=`<div class="card" style="background:var(--panel2)"><p class="muted">I can answer: overdue PPM, expiring documents, open incidents, contractor performance, executive summary. Try one of the chips above.</p></div>`;
+ $('#aiOut').innerHTML=out;
+}
+function aiList(title,items){
+ if(!items.length)return `<div class="card" style="background:var(--panel2)"><b>${title}</b><p class="muted" style="margin-top:6px">None 🎉</p></div>`;
+ return `<div class="card" style="background:var(--panel2)"><b>${title} (${items.length})</b>
+   <ul style="margin:10px 0 0 18px;font-size:13px;line-height:1.7">${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+}
+function aiContractors(){
+ const rows=DB.contractors.map(c=>{
+   const jobs=DB.ppm.filter(p=>p.contractor===c.company);
+   const done=jobs.filter(p=>liveStatus('ppm',p)==='Completed').length;
+   const over=jobs.filter(p=>liveStatus('ppm',p)==='Overdue').length;
+   const kpi=jobs.length?Math.round(done/jobs.length*100):0;
+   return {c:c.company,jobs:jobs.length,done,over,kpi};
+ }).sort((a,b)=>a.kpi-b.kpi);
+ const worst=rows[0];
+ return `<div class="card" style="background:var(--panel2)"><b>Subcontractor performance</b>
+   <p class="muted" style="font-size:12px;margin:6px 0">Lowest KPI: <b style="color:var(--bad)">${worst?worst.c:'—'}</b> (${worst?worst.kpi:0}%)</p>
+   <div class="tablewrap"><table><thead><tr><th>Subcontractor</th><th>Jobs</th><th>Done</th><th>Overdue</th><th>KPI</th></tr></thead><tbody>
+   ${rows.map(r=>`<tr><td>${esc(r.c)}</td><td>${r.jobs}</td><td>${r.done}</td><td>${r.over}</td><td><span class="pill ${r.kpi>=70?'p-ok':r.kpi>=40?'p-warn':'p-bad'}">${r.kpi}%</span></td></tr>`).join('')}
+   </tbody></table></div></div>`;
+}
+function aiExecutive(){
+ const over=overdueCount(); const comp=compliancePct();
+ const expDocs=DB.documents.filter(d=>{const n=daysBetween(d.expiryDate);return n!==null&&n<=30}).length;
+ const openInc=DB.incidents.filter(r=>r.status!=='Closed').length;
+ return `<div class="card" style="background:var(--panel2)">
+   <p style="font-size:13px;line-height:1.8">
+   As of <b>${todayISO()}</b>, the portfolio holds <b>${DB.assets.length} assets</b> across <b>${[...new Set(DB.assets.map(a=>a.building))].length} buildings</b>,
+   maintained by <b>${DB.contractors.length} contractors</b>.
+   PPM compliance stands at <b style="color:${comp>=80?'var(--ok)':'var(--warn)'}">${comp}%</b>, with
+   <b style="color:var(--bad)">${over} overdue item(s)</b> requiring attention.
+   There are <b>${openInc} open incident(s)</b> and <b style="color:var(--bad)">${expDocs} document(s)/certificate(s) expiring within 30 days</b>.
+   ${over>0?'Priority: clear overdue PPM and renew expiring compliance documents.':'Portfolio is on track.'}
+   </p></div>`;
+}
+
+/* ============================= SEARCH ============================= */
+function globalSearch(q){
+ q=q.trim().toLowerCase();
+ if(q.length<2){ if(ROUTE==='search')go('dashboard'); return; }
+ ROUTE='search'; renderNav();
+ setTitle('Search results',`for “${q}”`);
+ let html='';
+ Object.keys(SCHEMAS).forEach(mod=>{
+   const hits=DB[mod].filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q)));
+   if(hits.length){ const s=SCHEMAS[mod];
+     html+=`<div class="card" style="margin-bottom:14px"><div class="section-title">${s.icon} ${s.title} (${hits.length})</div>
+       <div class="tablewrap"><table><thead><tr>${s.cols.slice(0,4).map(c=>`<th>${esc(COL_LABELS[c]||cap(c))}</th>`).join('')}<th></th></tr></thead><tbody>
+       ${hits.slice(0,8).map(r=>`<tr>${s.cols.slice(0,4).map(c=>`<td>${cellVal(mod,c,r)}</td>`).join('')}
+        <td><button class="btn sm" onclick="go('${mod}');setTimeout(()=>openForm('${mod}','${r.id}'),50)">Open</button></td></tr>`).join('')}
+       </tbody></table></div></div>`;
+   }
+ });
+ $('#view').innerHTML=html||`<div class="card empty"><div class="e-ic">🔍</div>No matches for “${esc(q)}”.</div>`;
+}
+
+/* ============================= EXPORT ============================= */
+function exportCSV(mod){
+ const s=SCHEMAS[mod]; const keys=s.fields.map(f=>f.k);
+ const head=keys.join(',');
+ const body=DB[mod].map(r=>keys.map(k=>`"${String(r[k]??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+ const blob=new Blob([head+'\n'+body],{type:'text/csv'});
+ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${mod}_${todayISO()}.csv`; a.click();
+ toast(`Exported ${DB[mod].length} ${mod} rows`);
+}
+
+/* ============================= INIT ============================= */
+renderNav(); route(); buildNotes();
+</script>
+</body>
+</html>
